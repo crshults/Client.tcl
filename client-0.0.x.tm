@@ -1,4 +1,4 @@
-package provide client 0.0.12
+package provide client 0.0.13
 
 package require TclOO
 package require service_locator
@@ -40,7 +40,7 @@ oo::class create client {
         set _connected no
         set _client_socket [socket -async $_address $_port]
         set _awaiting_connection_result yes
-        chan configure $_client_socket -blocking no -buffering none -encoding iso8859-1 -translation binary
+        chan configure $_client_socket -blocking no -buffering line -encoding iso8859-1 -translation binary
         chan event $_client_socket readable [list [self] read_data]
         chan event $_client_socket writable [list [self] connection_result]
     }
@@ -63,7 +63,7 @@ oo::class create client {
             return
         }
 
-        if {[catch {set message [chan read $_client_socket]}]} {
+        if {[catch {set message [chan gets $_client_socket]}]} {
             my find_service
             return
         }
@@ -80,7 +80,7 @@ oo::class create client {
 
     method send {message} {
         if {$_connected} {
-            if {[catch {chan puts -nonewline $_client_socket $message}]} {
+            if {[catch {chan puts $_client_socket $message}]} {
                 my find_service
                 error "client not connected"
             }
