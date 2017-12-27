@@ -1,4 +1,4 @@
-package provide client 0.0.13
+package provide client 0.0.14
 
 package require TclOO
 package require service_locator
@@ -7,13 +7,15 @@ oo::class create client {
     variable _client_socket _connected _address _port _callback
     variable _awaiting_connection_result _connected_callback
     variable _service_locator _service_name
+    variable _disconnected_callback
 
-    constructor {service_name callback {connected_callback {}}} {
+    constructor {service_name callback {connected_callback {}} {disconnected_callback {}}} {
         set _service_name $service_name
         set _address unknown
         set _port unknown
         set _callback $callback
         set _connected_callback $connected_callback
+        set _disconnected_callback $disconnected_callback
         set _service_locator [service_locator new]
         after idle [list [self] find_service]
     }
@@ -24,7 +26,9 @@ oo::class create client {
     }
 
     method find_service {} {
-        catch {chan close $_client_socket}
+        if {![catch {chan close $_client_socket}]} {
+        	catch {$_disconnected_callback}
+        }
         set _connected no
         $_service_locator find $_service_name [list [self] service_found]
     }
